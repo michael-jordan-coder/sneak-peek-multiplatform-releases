@@ -1,0 +1,133 @@
+# Builds Sneak Peek for Windows, Mac and Linux from a tag of its private code repo, and puts the
+# files on a draft release here, to check and publish by hand. It runs here, in the public
+# releases repo, because GitHub builds public repos for free; the code stays private and is only
+# read during the build, with a read-only key.
+#
+# Only someone with write access to this repo can start it (Actions, Build, Run workflow, with the
+# tag): it never runs for a pull request, so nobody else's change ever sees the secrets.
+#
+# Secrets: CODE_READ_KEY (the read-only deploy key's private half), MAC_CSC_LINK and
+# MAC_CSC_KEY_PASSWORD (the Developer ID certificate and its password), APPLE_ID,
+# APPLE_APP_SPECIFIC_PASSWORD and APPLE_TEAM_ID (notarization). Without the Mac ones the Mac app
+# is only ad-hoc signed.
+name: Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The code repo's tag to build, such as v0.1.1"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }} ${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, platform: win, arch: x64 }
+          - { os: macos-latest, platform: mac, arch: arm64 }
+          - { os: macos-latest, platform: mac, arch: x64 }
+          - { os: ubuntu-latest, platform: linux, arch: x64 }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      # Mac signing, only on the Mac jobs.
+      CSC_LINK: ${{ matrix.platform == 'mac' && secrets.MAC_CSC_LINK || '' }}
+      CSC_KEY_PASSWORD: ${{ matrix.platform == 'mac' && secrets.MAC_CSC_KEY_PASSWORD || '' }}
+      APPLE_ID: ${{ matrix.platform == 'mac' && secrets.APPLE_ID || '' }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ matrix.platform == 'mac' && secrets.APPLE_APP_SPECIFIC_PASSWORD || '' }}
+      APPLE_TEAM_ID: ${{ matrix.platform == 'mac' && secrets.APPLE_TEAM_ID || '' }}
+    steps:
+      - name: Check out the code at the tag
+        uses: actions/checkout@v4
+        with:
+          repository: michael-jordan-coder/sneak-peek-multyplatform
+          ref: ${{ inputs.tag }}
+          ssh-key: ${{ secrets.CODE_READ_KEY }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: electron/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: electron
+      - name: Build the window
+        run: pnpm build
+        working-directory: electron
+      - name: Stage the engine
+        run: node scripts/stage-engine.mjs --arch ${{ matrix.arch }}
+      - name: Package
+        working-directory: electron
+        run: |
+          if [ -n "$CSC_LINK" ]; then
+            echo "Signing with the Developer ID certificate, and notarizing."
+            config="--config builder-signed.cjs"
+          else
+            echo "No signing secrets: the Mac app is ad-hoc signed, Windows and Linux are not signed."
+            unset CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+            config=""
+          fi
+          pnpm exec electron-builder --${{ matrix.platform }} --${{ matrix.arch }} --publish never $config
+      - name: Start the packaged app and run a new project in it
+        run: |
+          if [ "${{ matrix.platform }}" = linux ]; then xvfb-run -a node scripts/smoke-packaged.mjs; else node scripts/smoke-packaged.mjs; fi
+      - name: Name the Mac update file by its CPU
+        if: matrix.platform == 'mac'
+        run: mv electron/dist-app/latest-mac.yml electron/dist-app/latest-mac-${{ matrix.arch }}.yml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sneak-peek-${{ matrix.platform }}-${{ matrix.arch }}
+          if-no-files-found: error
+          path: |
+            electron/dist-app/*.dmg
+            electron/dist-app/*.zip
+            electron/dist-app/*.exe
+            electron/dist-app/*.AppImage
+            electron/dist-app/*.blockmap
+            electron/dist-app/*.yml
+
+  release:
+    name: Draft release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the code, with its history for the notes
+        uses: actions/checkout@v4
+        with:
+          repository: michael-jordan-coder/sneak-peek-multyplatform
+          ref: ${{ inputs.tag }}
+          ssh-key: ${{ secrets.CODE_READ_KEY }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Merge the Mac update files
+        run: node scripts/merge-mac-updates.mjs dist
+      # The tag reaches the shell as a variable, never pasted into the script.
+      - name: Write the release notes
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          previous=$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || true)
+          range=${previous:+$previous..}$TAG
+          git log --no-merges --format='- %s' "$range" | grep -v '^- Release v' > notes.md || true
+      - name: Make the draft release here
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: gh release create "$TAG" -R "$GITHUB_REPOSITORY" --draft --title "Sneak Peek $TAG" --notes-file notes.md dist/*
