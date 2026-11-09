@@ -1,0 +1,62 @@
+# The app's engine tests on Windows, Mac and Linux, run here because GitHub runs public repos for
+# free; the code stays private and is only read, with the read-only key. Start it for a branch, a
+# tag or a commit of the code (Actions, Tests, Run workflow, or
+# `gh workflow run test.yml -R michael-jordan-coder/sneak-peek-multiplatform-releases -f ref=main`);
+# it also runs once a day on main. Only someone with write access can start it, never a pull request.
+#
+# The tests run on Electron's own Node (ELECTRON_RUN_AS_NODE), which is what runs the engine in the
+# app. A test that hangs fails after ten minutes with its name.
+name: Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "The code's branch, tag or commit to test"
+        required: true
+        default: main
+  schedule:
+    - cron: "17 3 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  engine:
+    name: Engine (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          repository: michael-jordan-coder/sneak-peek-multyplatform
+          ref: ${{ inputs.ref || 'main' }}
+          ssh-key: ${{ secrets.CODE_READ_KEY }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            engine/stage/server/fallback/pnpm-lock.yaml
+            electron/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile
+        working-directory: engine/stage/server/fallback
+      - name: Install Electron
+        working-directory: electron
+        run: |
+          pnpm install --frozen-lockfile
+          node node_modules/electron/install.js
+      - name: Engine tests on Electron's Node
+        shell: bash
+        run: |
+          ELECTRON="$(cd electron && node -p "require('electron')")"
+          ELECTRON_RUN_AS_NODE=1 "$ELECTRON" --test --test-timeout=600000 "engine/test/*.test.mjs"
