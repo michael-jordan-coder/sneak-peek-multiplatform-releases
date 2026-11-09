@@ -96,7 +96,7 @@ jobs:
             electron/dist-app/*.exe
             electron/dist-app/*.AppImage
             electron/dist-app/*.blockmap
-            electron/dist-app/*.yml
+            electron/dist-app/latest*.yml
 
   release:
     name: Draft release
