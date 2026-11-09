@@ -31,7 +31,8 @@ jobs:
         include:
           - { os: windows-latest, platform: win, arch: x64 }
           - { os: macos-latest, platform: mac, arch: arm64 }
-          - { os: macos-latest, platform: mac, arch: x64 }
+          # On an Intel Mac, so the test runs the app natively; under Rosetta it starts too slowly to judge.
+          - { os: macos-15-intel, platform: mac, arch: x64 }
           - { os: ubuntu-latest, platform: linux, arch: x64 }
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
