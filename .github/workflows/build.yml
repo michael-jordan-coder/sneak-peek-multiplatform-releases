@@ -83,6 +83,14 @@ jobs:
       - name: Start the packaged app and run a new project in it
         run: |
           if [ "${{ matrix.platform }}" = linux ]; then xvfb-run -a node scripts/smoke-packaged.mjs; else node scripts/smoke-packaged.mjs; fi
+      # The AppImage itself, which the test above does not run: Claude Code's plugins must start
+      # its server once the app has quit and its mount is gone.
+      - name: Start the AppImage, then its Claude Code plugins once it has quit
+        if: matrix.platform == 'linux'
+        run: |
+          if [ ! -f scripts/smoke-appimage.mjs ]; then echo "This tag has no AppImage check."; exit 0; fi
+          sudo apt-get install -y -q libfuse2t64
+          xvfb-run -a node scripts/smoke-appimage.mjs electron/dist-app/*.AppImage
       - name: Name the Mac update file by its CPU
         if: matrix.platform == 'mac'
         run: mv electron/dist-app/latest-mac.yml electron/dist-app/latest-mac-${{ matrix.arch }}.yml
