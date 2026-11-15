@@ -1,0 +1,58 @@
+# Updates the Claude Code plugin in plugin/ (and its listing in .claude-plugin/marketplace.json)
+# from the code of each release, once the release is published, so the plugin never reaches
+# anyone before the app it starts. Anthropic's directory follows plugin/ on main and checks each
+# new version before it goes live. The plugin is assembled by the code's scripts/build-plugin.mjs,
+# read with the same read-only key as the build.
+name: Plugin
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The code repo's tag whose plugin to publish, such as v0.1.5"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: plugin
+  cancel-in-progress: false
+
+jobs:
+  plugin:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.event.release.tag_name }}
+    steps:
+      - name: Check out this repo's main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: site
+      - name: Check out the code at the tag
+        uses: actions/checkout@v4
+        with:
+          repository: michael-jordan-coder/sneak-peek-multyplatform
+          ref: ${{ env.TAG }}
+          ssh-key: ${{ secrets.CODE_READ_KEY }}
+          persist-credentials: false
+          path: code
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Assemble the plugin
+        run: |
+          if [ ! -f code/scripts/build-plugin.mjs ]; then echo "$TAG has no plugin to publish (it came before the plugin)."; exit 0; fi
+          node code/scripts/build-plugin.mjs site
+      - name: Commit it, when it changed
+        working-directory: site
+        run: |
+          git add plugin .claude-plugin
+          if git diff --cached --quiet; then echo "The plugin is the same as before."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "The Claude Code plugin of $TAG"
+          git push origin main
