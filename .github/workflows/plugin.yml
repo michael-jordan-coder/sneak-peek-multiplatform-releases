@@ -50,6 +50,7 @@ jobs:
       - name: Commit it, when it changed
         working-directory: site
         run: |
+          if [ ! -d plugin ]; then echo "Nothing to commit."; exit 0; fi
           git add plugin .claude-plugin
           if git diff --cached --quiet; then echo "The plugin is the same as before."; exit 0; fi
           git config user.name "github-actions[bot]"
