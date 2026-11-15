@@ -9,6 +9,9 @@
   },
   "homepage": "https://trysneakpeek.com",
   "repository": "https://github.com/michael-jordan-coder/sneak-peek-multiplatform-releases",
+  "documentationUrl": "https://trysneakpeek.com/docs",
+  "supportUrl": "https://github.com/michael-jordan-coder/sneak-peek-multiplatform-releases/issues",
+  "privacyPolicyUrl": "https://trysneakpeek.com/privacy",
   "license": "MIT",
   "keywords": [
     "design",
