@@ -6,6 +6,8 @@ Every tool that works on a project takes an optional `projectId`. Without one, i
 
 Read-only. Returns:
 
+- `pages`: the canvas's pages, `[{ id, name }]`. Screens (`screens`) is first and always there: the app's routes. Other pages hold other work, each arranged on its own. Every frame names its `page`, and `showing.page` is the page the user is on.
+
 - `repo`: the folder you work in, as `{ path, projectId, via }`. `via` is `roots` (your client's MCP roots), `repoPath` (you passed it) or `cwd` (a server started over stdio in your folder). `projectId` is the project imported from it, the one look answers about; null means the repo has no project yet, `project` is null too, and `issues` has `repo_not_imported`: call `open_project` with `mode: "import"` and `sourcePath` set to the repo's root. `repo` is null when nothing says where you work (`issues` then has `repo_unknown`: pass `repoPath`).
 - `onScreen`: the project the Sneak Peek window shows now. When it is not your repo's project, `issues` has `other_project_on_screen`; tools without `projectId` still work on your repo's project.
 - `issues`: what look noticed about where you work, each `{ code, message, next }`. `app_closed` means Sneak Peek is not running: the tools still work, and the ones that change the canvas start its engine.
@@ -35,7 +37,9 @@ Read-only. Returns this skill's text for a client that does not load skills itse
 
 ## show_frames
 
-`frames`: a list of `{ id, route?, name?, width?, height?, workspaceId? }`. An id that exists is updated in place and keeps the fields you omit; a new frame is 1440 by 900 unless you give a size. The canvas arranges the frames itself: columns by route depth (the root screen, then top-level screens, then what is under them), a row per route, a branch's frame to the right of its source. `x` and `y` are accepted and ignored. `route` starts with `/`. `workspaceId` points a frame at a branch; omit it for the main copy. Up to 100 frames per canvas.
+`frames`: a list of `{ id, route?, name?, width?, height?, workspaceId?, page? }`. An id that exists is updated in place and keeps the fields you omit; a new frame is 1440 by 900 unless you give a size. The canvas arranges the frames itself: columns by route depth (the root screen, then top-level screens, then what is under them), a row per route, a branch's frame to the right of its source. `x` and `y` are accepted and ignored. `route` starts with `/`. `workspaceId` points a frame at a branch; omit it for the main copy. Up to 100 frames per canvas.
+
+`page`: `{ id, name? }`, the page the frames in this call go on, unless a frame names its own `page`. A page the canvas lacks is added, named `name` (else its id). Without either, a new frame goes on Screens and an existing one stays on its page. Each page is arranged on its own.
 
 `focus`: `new` (default) moves the canvas to the frames you just added, `all` to every frame in the call, `none` leaves the view alone. The result's `focus` is `moved` (the window, or a canvas open in a browser pane, moved), `window_closed` (saved, but nothing to move) or `failed`.
 
