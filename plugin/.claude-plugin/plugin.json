@@ -1,7 +1,7 @@
 {
   "name": "sneak-peek",
   "displayName": "Sneak Peek",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Compare design directions for your own repo side by side on a live canvas, and bring back only the one you choose. Needs the Sneak Peek app.",
   "author": {
     "name": "Sneak Peek",
