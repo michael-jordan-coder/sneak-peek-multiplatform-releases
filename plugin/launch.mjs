@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// The public prototype-canvas plugin's MCP server, as Claude Code starts it at a session's start:
+// The public sneak-peek plugin's MCP server, as Claude Code starts it at a session's start:
 // it finds the installed Sneak Peek and runs the server that app ships, over stdio. Where the app
 // is comes from `app-location.json` in the data folder, which the installed app writes on every
 // start (electron/main.mjs recordLocation). Without an installed app it serves one tool that says
@@ -74,8 +74,8 @@ export function serveMissingApp({ input = process.stdin, output = process.stdout
   // A data folder without app-location.json is an app from before it wrote one (before 0.1.5),
   // or one not opened since it was installed: opening the latest version writes it.
   const message = fs.existsSync(folder)
-    ? `Sneak Peek has not told this plugin where it is installed, so the prototype-canvas tools cannot run yet. Tell the user to update Sneak Peek to the latest version from ${DOWNLOAD} (or from its own update prompt), open it once, and start a new session.`
-    : `Sneak Peek is not installed on this computer, so the prototype-canvas tools cannot run. Tell the user to download it from ${DOWNLOAD}, open it once, and start a new session.`;
+    ? `Sneak Peek has not told this plugin where it is installed, so the sneak-peek tools cannot run yet. Tell the user to update Sneak Peek to the latest version from ${DOWNLOAD} (or from its own update prompt), open it once, and start a new session.`
+    : `Sneak Peek is not installed on this computer, so the sneak-peek tools cannot run. Tell the user to download it from ${DOWNLOAD}, open it once, and start a new session.`;
   const send = (value) => output.write(JSON.stringify(value) + "\n");
   let buffer = "";
   input.setEncoding("utf8");
@@ -93,7 +93,7 @@ export function serveMissingApp({ input = process.stdin, output = process.stdout
         send({ jsonrpc: "2.0", id: request.id, result: {
           protocolVersion: request.params?.protocolVersion ?? "2025-06-18",
           capabilities: { tools: {} },
-          serverInfo: { name: "prototype-canvas", version: "0.0.0" },
+          serverInfo: { name: "sneak-peek", version: "0.0.0" },
           instructions: message,
         } });
       } else if (request.method === "tools/list") {

@@ -2,7 +2,7 @@
 
 Sneak Peek puts the UI of your own repo on a live canvas, so you and Claude can compare design directions side by side before anything changes in your code. Ask for "three directions for the header" and Claude makes each one in its own working copy of your project, running with your real dependencies, shows them as live frames on the canvas, and brings the one you choose back to your repo only as a diff you approve.
 
-This plugin connects Claude Code to the Sneak Peek app. It adds the `prototype-canvas` skill, which teaches Claude the way of working, and the `prototype-canvas` MCP server, whose tools open your project, branch directions, show and photograph frames, and apply the one you choose.
+This plugin connects Claude Code, or Codex, to the Sneak Peek app. It adds the `sneak-peek` skill, which teaches Claude the way of working, and the `sneak-peek` MCP server, whose tools open your project, branch directions, show and photograph frames, and apply the one you choose.
 
 ## Install
 
@@ -11,6 +11,15 @@ In Claude Code:
 ```
 /plugin install sneak-peek --marketplace michael-jordan-coder/sneak-peek-multiplatform-releases
 ```
+
+In Codex:
+
+```
+codex plugin marketplace add michael-jordan-coder/sneak-peek-multiplatform-releases
+codex plugin add sneak-peek@sneak-peek
+```
+
+Then reopen the ChatGPT desktop app and run the chat on your computer. Codex shows the canvas in a browser tab beside the chat.
 
 ## Requirements
 
@@ -33,7 +42,7 @@ Your project's files stay on your computer: the app works on a copy of your repo
 
 ## Tools
 
-`look`, `read_guide`, `open_project`, `show_frames`, `capture_frames`, `branch_frame`, `choose_frame`, `apply_branch`, `branch_changes`, `share_frame`, `dev_server` and `refresh_from_source`. Each answers `{ ok, data, error }`, and an error says what to do next.
+`look_around`, `read_me`, `move_in`, `show_off`, `peek`, `what_if`, `go_with`, `whats_changed`, `pass_around`, `poke_server` and `catch_up`. Each answers `{ ok, data, error }`, and an error says what to do next.
 
 ## Support
 

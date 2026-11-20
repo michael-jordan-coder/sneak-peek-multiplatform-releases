@@ -1,0 +1,42 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "sneak-peek",
+  "version": "0.2.4",
+  "description": "Compare design directions for your own repo side by side on a live canvas, and bring back only the one you choose. Needs the Sneak Peek app.",
+  "author": {
+    "name": "Sneak Peek",
+    "url": "https://trysneakpeek.com"
+  },
+  "homepage": "https://trysneakpeek.com",
+  "repository": "https://github.com/michael-jordan-coder/sneak-peek-multiplatform-releases",
+  "license": "MIT",
+  "keywords": [
+    "design",
+    "prototyping",
+    "ui",
+    "canvas",
+    "frontend"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Sneak Peek",
+        "shortDescription": "Design directions on a live canvas",
+        "developerName": "Sneak Peek",
+        "category": "Design",
+        "capabilities": [
+          "Interactive",
+          "Read",
+          "Write"
+        ],
+        "websiteURL": "https://trysneakpeek.com",
+        "privacyPolicyURL": "https://trysneakpeek.com/privacy",
+        "logo": "./assets/icon.png",
+        "composerIcon": "./assets/icon.png",
+        "defaultPrompt": [
+          "Give me three directions for this screen"
+        ]
+      }
+    }
+  }
+}
