@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "sneak-peek",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "description": "Compare design directions for your own repo side by side on a live canvas, and bring back only the one you choose. Needs the Sneak Peek app.",
   "author": {
     "name": "Sneak Peek",
